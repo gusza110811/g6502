@@ -1,16 +1,18 @@
     .org $8000
 
 reset:
-    lda #$F0
+    lda #$ff
+    sta $6002
+
+    lda #$50
+    sta $6000
 
 loop:
-    sta $200,x
-    inx
-    bne loop
+    ror A
+    sta $6000
 
-    brk
+    jmp loop
 
-vectors:
     .org $fffc
     .word reset
     .word $0000

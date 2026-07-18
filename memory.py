@@ -1,30 +1,4 @@
-class Device:
-    def init__(self):
-        pass
-    def read(self, addr):
-        pass
-    def write(self, addr, value):
-        pass
-
-class Ram(Device):
-    def __init__(self, size:int=2**16):
-        self.memory = [0] * size
-
-    def read(self, addr):
-        return self.memory[addr]
-
-    def write(self, addr, value):
-        self.memory[addr] = value
-
-class Rom(Device):
-    def __init__(self, file:str):
-        self.memory = open(file,'rb').read()
-    
-    def read(self, addr):
-        return self.memory[addr]
-
-    def write(self, addr, value):
-        raise ValueError("ROM is read-only")
+from devices import *
 
 class map_entry:
     def __init__(self, match:int, match_mask:int, address_mask:int, handler:Device):
@@ -34,8 +8,9 @@ class map_entry:
         self.handler = handler
 
 DEFAULT_MAP = [
-    map_entry(0x0000, 0x8000, 0x7FFF, Ram(0x8000)),
-    map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out"))
+    map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out")),
+    map_entry(0x6000, 0xE000, 0x000F, DemoLED()),
+    map_entry(0x0000, 0xE000, 0x7FFF, Ram(0x4000)),
 ]
 
 

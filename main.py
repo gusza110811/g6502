@@ -1,6 +1,7 @@
 import memory
 import execute
 import math
+import time
 
 A, X, Y, SP, PC, P = range(6)
 
@@ -10,6 +11,7 @@ class Emulator:
         self.memory = memory.Memory()
         self.execute = execute.Execute(self)
         self.registers = [0] * 8  # A, X, Y, SP, PC, P, -, -
+        self.delay = 0.1
     
     def fetch(self):
         pc = self.registers[PC]
@@ -42,6 +44,10 @@ class Emulator:
             inst = self.fetch()
 
             self.execute.execute(inst)
+
+            #print(f"PC: {self.registers[PC]:04X}, A: {self.registers[A]:02X}, X: {self.registers[X]:02X}, Y: {self.registers[Y]:02X}, SP: {self.registers[SP]:02X}, P: {self.registers[P]:08b}")
+
+            time.sleep(self.delay)  # Add a small delay to slow down execution for debugging purposes
 
     def dump_registers(self):
         print("Registers:")
