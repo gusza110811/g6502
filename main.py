@@ -16,6 +16,23 @@ class Emulator:
         opcode = self.memory.read(pc)
         self.registers[PC] += 1
         return opcode
+    
+    def correct_register(self,reg):
+        if reg == PC:
+            self.registers[reg] = self.registers[reg] & 0xFFFF
+        else:
+            self.registers[P] = 0
+            if self.registers[reg] & 0x100:
+                self.registers[P] |= 0x01  # Set Carry flag
+            if self.registers[reg] < 0:
+                self.registers[P] |= 0x40  # Set Overflow flag
+
+            self.registers[reg] = self.registers[reg] & 0xFF
+
+            if self.registers[reg] == 0:
+                self.registers[P] |= 0x02  # Set Zero flag
+            if self.registers[reg] & 0x80:
+                self.registers[P] |= 0x80  # Set Negative flag
 
     def main(self):
         reset_vec = self.memory.read(0xFFFC) | (self.memory.read(0xFFFD) << 8)
@@ -56,7 +73,7 @@ class Emulator:
             if repeated:
                 print("...")
                 repeated = False
-            print(f"{idx:04X}0",end="")
+            print(f"{idx:03X}0",end="")
             print(" "+line.hex(" "),end="")
             print(" | ",end="")
             print(get_string(line))
@@ -64,6 +81,8 @@ class Emulator:
 
 if __name__ == "__main__":
     emu = Emulator()
-    emu.main()
-    emu.dump_registers()
-    emu.dump_memory(0x0000, 0x00FF)
+    try:
+        emu.main()
+    finally:
+        emu.dump_registers()
+        emu.dump_memory(0x0000, 0xFFFF)

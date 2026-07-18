@@ -1,8 +1,13 @@
     .org $8000
 
 reset:
-    lda #$50
-    sta $04
+    lda #$F0
+
+loop:
+    sta $200,x
+    inx
+    bne loop
+
     brk
 
 vectors:

@@ -7,8 +7,8 @@ class Device:
         pass
 
 class Ram(Device):
-    def __init__(self):
-        self.memory = [0] * 2**16
+    def __init__(self, size:int=2**16):
+        self.memory = [0] * size
 
     def read(self, addr):
         return self.memory[addr]
@@ -34,7 +34,7 @@ class map_entry:
         self.handler = handler
 
 DEFAULT_MAP = [
-    map_entry(0x0000, 0x8000, 0x7FFF, Ram()),
+    map_entry(0x0000, 0x8000, 0x7FFF, Ram(0x8000)),
     map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out"))
 ]
 
