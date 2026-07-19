@@ -5,6 +5,7 @@ import time
 from instructions import instructions
 import tomllib
 import argparse
+import os
 
 A, X, Y, SP, PC, P = range(6)
 
@@ -73,7 +74,7 @@ class Emulator:
             self.execute.execute(inst)
 
             if self.interrupt_request:
-                if self.registers[P] & 0x04:
+                if not (self.registers[P] & 0x04):
                     self.push(self.registers[PC] >> 8)
                     self.push(self.registers[PC])
                     self.push(self.registers[P])
@@ -121,8 +122,8 @@ class Emulator:
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument("-b","--bus", default="bus.toml", help="bus definition")
-    argparser.add_argument("-c","--clock", default=None, help="throttle clock speed")
+    argparser.add_argument("-b","--bus", default="./bus.toml", help="bus definition")
+    argparser.add_argument("-c","--clock", default="100k", help="throttle clock speed")
     argparser.add_argument("-t","--trace",action="store_true", help="trace the execution")
     argparser.add_argument("-m","--dump",action="store_true", help="dump memory at the end of execution")
 
@@ -133,6 +134,8 @@ if __name__ == "__main__":
 
     trace = args.trace
     dump = args.dump
+
+    os.chdir(os.path.dirname(args.bus))
 
     emu = Emulator(busdef)
 

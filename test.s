@@ -7,8 +7,6 @@ reset:
     lda #$0
     sta $6000
 
-    sei
-
 loop:
     jmp loop
 
