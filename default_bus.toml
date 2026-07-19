@@ -1,0 +1,25 @@
+[[region]]
+type = "rom"
+source = "a.out"
+match = 0x8000
+match_mask = 0x8000
+address_mask = 0x7FFF
+
+[[region]]
+type = "demoLED"
+match = 0x6000
+match_mask = 0xE001
+address_mask = 0x0000
+
+[[region]]
+type = "demoButton"
+match = 0x6001
+match_mask = 0xE001
+address_mask = 0x0000
+
+[[region]]
+type = "ram"
+size = 0x6000
+match = 0x0000
+match_mask = 0x8000
+address_mask = 0x7FFF

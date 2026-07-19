@@ -1,24 +1,33 @@
-from devices import *
+import devices
 
 class map_entry:
-    def __init__(self, match:int, match_mask:int, address_mask:int, handler:Device):
+    def __init__(self, match:int, match_mask:int, address_mask:int, handler:devices.Device):
         self.match = match
         self.match_mask = match_mask
         self.address_mask = address_mask
         self.handler = handler
 
-
 class Bus:
-    def __init__(self, map:list[map_entry]=None, irq_callback=None):
-        self.map = map
-        if self.map is None:
-            self.map = [
-                map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out")),
-                map_entry(0x6000, 0xE001, 0x0000, DemoLED()),
-                map_entry(0x6001, 0xE001, 0x0000, DemoButton(irq_callback)),
-                map_entry(0x0000, 0xE000, 0x7FFF, Ram(0x4000)),
-            ]
+    def __init__(self, irq_callback=None, map_dict:dict=None):
+        self.map = []
         self.irq_callback = irq_callback
+        if map_dict:
+            self.gen_map(map_dict)
+    
+    def gen_map(self, map_dict:str):
+        regions = map_dict.get("region", [])
+        for region in regions:
+            type = region.get("type", None).lower()
+            match = region.get("match", 0)
+            match_mask = region.get("match_mask", 0xFFFF)
+            address_mask = region.get("address_mask", 0xFFFF)
+
+            handler = devices.mapping.get(type, None)
+            if handler is None:
+                print(f"Unknown device: {type}")
+                continue
+
+            self.map.append(map_entry(match, match_mask, address_mask, handler(region, self.irq_callback)))
     
     def read(self, address):
         for item in self.map:

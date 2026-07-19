@@ -3,13 +3,14 @@ import execute
 import math
 import time
 from instructions import instructions
+import tomllib
 
 A, X, Y, SP, PC, P = range(6)
 
 class Emulator:
-    def __init__(self):
+    def __init__(self, bus_definition:dict):
         self.running = True
-        self.memory = memory.Bus(irq_callback=self.interrupt)
+        self.memory = memory.Bus(self.interrupt, bus_definition)
         self.execute = execute.Execute(self)
         self.registers = [0] * 8  # A, X, Y, SP, PC, P, -, -
         self.delay = 0.1
@@ -116,7 +117,9 @@ class Emulator:
             previous = line
 
 if __name__ == "__main__":
-    emu = Emulator()
+    default_busdef = tomllib.load(open("default_bus.toml","rb"))
+
+    emu = Emulator(default_busdef)
     try:
         emu.main()
     finally:
@@ -125,6 +128,6 @@ if __name__ == "__main__":
 
         with open(".trace", "w") as f:
             for addr, inst, regs in emu.trace:
-                inst_decode = instructions.get(inst, ('???',"implied"))
+                inst_decode = instructions.get(inst, ('???',"???"))
                 f.write(f"{addr:04X}: {inst_decode[0].rjust(4)}-{inst_decode[1].ljust(10)}\
 ({inst:2X})\t\tA: {regs[A]:02X}, X: {regs[X]:02X}, Y: {regs[Y]:02X}, SP: {regs[SP]:02X}, P: {regs[P]:08b}\n")
