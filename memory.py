@@ -7,16 +7,18 @@ class map_entry:
         self.address_mask = address_mask
         self.handler = handler
 
-DEFAULT_MAP = [
-    map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out")),
-    map_entry(0x6000, 0xE000, 0x000F, DemoLED()),
-    map_entry(0x0000, 0xE000, 0x7FFF, Ram(0x4000)),
-]
 
-
-class Memory:
-    def __init__(self, map:list[map_entry]=DEFAULT_MAP):
+class Bus:
+    def __init__(self, map:list[map_entry]=None, irq_callback=None):
         self.map = map
+        if self.map is None:
+            self.map = [
+                map_entry(0x8000, 0x8000, 0x7FFF, Rom("a.out")),
+                map_entry(0x6000, 0xE001, 0x0000, DemoLED()),
+                map_entry(0x6001, 0xE001, 0x0000, DemoButton(irq_callback)),
+                map_entry(0x0000, 0xE000, 0x7FFF, Ram(0x4000)),
+            ]
+        self.irq_callback = irq_callback
     
     def read(self, address):
         for item in self.map:
@@ -27,5 +29,5 @@ class Memory:
     def write(self, address, value):
         for item in self.map:
             if (address & item.match_mask) == item.match:
-                return item.handler.write(address & item.address_mask, value)
+                return item.handler.write(address & item.address_mask, value & 0xFF)
         return 0

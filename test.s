@@ -4,15 +4,21 @@ reset:
     lda #$ff
     sta $6002
 
-    lda #$50
+    lda #$0
     sta $6000
+
+    sei
 
 loop:
-    ror A
-    sta $6000
-
     jmp loop
 
+int:
+    adc #1
+    sta $6000
+
+    rti
+
+vector:
     .org $fffc
     .word reset
-    .word $0000
+    .word int

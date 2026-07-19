@@ -49,6 +49,7 @@ class Execute:
                 case "stack":
                     val = read(0x0100 + registers[SP])
                     registers[SP] += 1
+                    registers[SP] &= 0xFF  # Ensure SP wraps around at 0xFF
                     return val
 
         def write_value(addressing, value):
@@ -82,6 +83,7 @@ class Execute:
                 case "stack":
                     write(0x0100 + registers[SP], value)
                     registers[SP] -= 1
+                    registers[SP] &= 0xFF
         def jump(addressing):
             match addressing:
                 case "absolute":
