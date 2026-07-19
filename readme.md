@@ -1,7 +1,7 @@
 # g6502
-Gusza's thing, definitely not by GNU
-
 A customizable 65c02 emulator written in Python
+
+Gusza's thing, definitely not by GNU
 
 ## Status
 
@@ -11,7 +11,9 @@ A customizable 65c02 emulator written in Python
 - [ ] Cycle accuracy
 
 ### Bus
-- [ ] Configurable device mapping
+- [x] Configurable device mapping
+- [ ] LCD text display device
+- [ ] ACIA device
 
 ### Compatibility
 - [x] Ben Eater's minimal 6502 breadboard computer

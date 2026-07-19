@@ -1,6 +1,6 @@
 [[region]]
 type = "rom"
-source = "a.out"
+source = "main.bin"
 match = 0x8000
 match_mask = 0x8000
 address_mask = 0x7FFF
