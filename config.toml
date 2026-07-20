@@ -1,3 +1,5 @@
+clock = "100"
+
 [[region]]
 type = "rom"
 source = "main.bin"

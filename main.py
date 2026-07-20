@@ -17,6 +17,22 @@ class Emulator:
         self.registers = [0] * 8  # A, X, Y, SP, PC, P, -, -
         self.delay = 0
 
+        clock = bus_definition.get("clock",None)
+
+        if clock:
+            if isinstance(clock,int):
+                pass
+            elif clock.endswith("k"):
+                clock = int(clock[:1])*10**3
+            elif clock.endswith("m"):
+                clock = int(clock[:1])*10**6
+            elif clock.endswith("g"):
+                clock = int(clock[:1])*10**9
+            else:
+                clock = int(clock)
+
+            emu.delay = 1/clock
+
         self.doTrace = True
         self.trace = []
 
@@ -122,15 +138,13 @@ class Emulator:
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument("-b","--bus", default="./bus.toml", help="bus definition")
-    argparser.add_argument("-c","--clock", default="100k", help="throttle clock speed")
+    argparser.add_argument("-c","--config", default="./config.toml", help="bus definition")
     argparser.add_argument("-t","--trace",action="store_true", help="trace the execution")
     argparser.add_argument("-m","--dump",action="store_true", help="dump memory at the end of execution")
 
     args = argparser.parse_args()
 
     busdef = tomllib.load(open(args.bus,"rb"))
-    clock = args.clock
 
     trace = args.trace
     dump = args.dump
@@ -140,18 +154,6 @@ if __name__ == "__main__":
     emu = Emulator(busdef)
 
     emu.doTrace = trace
-
-    if clock:
-        if clock.endswith("k"):
-            clock = int(clock[:1])*10**3
-        elif clock.endswith("m"):
-            clock = int(clock[:1])*10**6
-        elif clock.endswith("g"):
-            clock = int(clock[:1])*10**9
-        else:
-            clock = int(clock)
-
-        emu.delay = 1/clock
 
     try:
         emu.main()
