@@ -31,7 +31,7 @@ class Emulator:
             else:
                 clock = int(clock)
 
-            emu.delay = 1/clock
+            self.delay = 1/clock
 
         self.doTrace = True
         self.trace = []
@@ -144,12 +144,12 @@ if __name__ == "__main__":
 
     args = argparser.parse_args()
 
-    busdef = tomllib.load(open(args.bus,"rb"))
+    busdef = tomllib.load(open(args.config,"rb"))
 
     trace = args.trace
     dump = args.dump
 
-    os.chdir(os.path.dirname(args.bus))
+    os.chdir(os.path.dirname(args.config))
 
     emu = Emulator(busdef)
 
