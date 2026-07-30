@@ -81,9 +81,9 @@ class Execute:
                 case "zp_indirect":
                     write(read(fetch()), value)
                 case "stack":
-                    write(0x0100 + registers[SP], value)
                     registers[SP] -= 1
                     registers[SP] &= 0xFF
+                    write(0x0100 + registers[SP], value)
         def jump(addressing):
             match addressing:
                 case "absolute":

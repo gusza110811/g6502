@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import memory
 import execute
 import math
@@ -6,6 +7,7 @@ from instructions import instructions
 import tomllib
 import argparse
 import os
+import termmagic
 
 A, X, Y, SP, PC, P = range(6)
 
@@ -155,18 +157,82 @@ if __name__ == "__main__":
 
     emu.doTrace = trace
 
+    termmagic.disable_buffering()
+    termmagic.disable_lfcrlf()
+
     try:
         emu.main()
     except KeyboardInterrupt:
         pass
     finally:
+        termmagic.reset()
         if dump:
             emu.dump_registers()
             emu.dump_memory(0x0000, 0xFFFF)
 
         if trace:
+            def flags(p):
+                return (
+                    ("N" if p & 0x80 else "n") +
+                    ("V" if p & 0x40 else "v") +
+                    "-" +
+                    ("B" if p & 0x10 else "b") +
+                    ("D" if p & 0x08 else "d") +
+                    ("I" if p & 0x04 else "i") +
+                    ("Z" if p & 0x02 else "z") +
+                    ("C" if p & 0x01 else "c")
+                )
+
+
             with open(".trace", "w") as f:
                 for addr, inst, regs in emu.trace:
-                    inst_decode = instructions.get(inst, ('???',"???"))
-                    f.write(f"{addr:04X}: {inst_decode[0].rjust(4)}-{inst_decode[1].ljust(10)}\
-    ({inst:2X})\t\tA: {regs[A]:02X}, X: {regs[X]:02X}, Y: {regs[Y]:02X}, SP: {regs[SP]:02X}, P: {regs[P]:08b}\n")
+                    inst_decode = instructions.get(inst, (f'?{inst:2X}',"???"))
+                    operand_type = inst_decode[1]
+                    operand = None
+                    if operand_type == "implied":
+                        operand = ""
+                    elif operand_type == "immediate":
+                        operand = f"#${emu.memory.read(regs[PC]):02X}"
+                    elif operand_type == "absolute":
+                        low = emu.memory.read(regs[PC])
+                        high = emu.memory.read(regs[PC]+1)
+                        operand = f"${high:02X}{low:02X}"
+                    elif operand_type == "relative":
+                        offset = emu.memory.read(regs[PC])
+                        target = (regs[PC] + 1 + (offset if offset < 0x80 else offset - 0x100)) & 0xFFFF
+                        operand = f"${target:04X}"
+                    elif operand_type == "zeropage":
+                        zp_addr = emu.memory.read(regs[PC])
+                        operand = f"${zp_addr:02X}"
+                    elif operand_type == "zeropage_X":
+                        zp_addr = emu.memory.read(regs[PC])
+                        operand = f"${zp_addr:02X},X"
+                    elif operand_type == "zeropage_Y":
+                        zp_addr = emu.memory.read(regs[PC])
+                        operand = f"${zp_addr:02X},Y"
+                    elif operand_type == "absolute_X":
+                        low = emu.memory.read(regs[PC])
+                        high = emu.memory.read(regs[PC]+1)
+                        operand = f"${high:02X}{low:02X},X"
+                    elif operand_type == "absolute_Y":
+                        low = emu.memory.read(regs[PC])
+                        high = emu.memory.read(regs[PC]+1)
+                        operand = f"${high:02X}{low:02X},Y"
+                    elif operand_type == "indirect":
+                        low = emu.memory.read(regs[PC])
+                        high = emu.memory.read(regs[PC]+1)
+                        operand = f"(${high:02X}{low:02X})"
+                    elif operand_type == "indirect_X":
+                        zp_addr = emu.memory.read(regs[PC])
+                        operand = f"(${zp_addr:02X},X)"
+                    elif operand_type == "indirect_Y":
+                        zp_addr = emu.memory.read(regs[PC])
+                        operand = f"(${zp_addr:02X}),Y"
+                    else:
+                        operand = "???"
+                    f.write(
+                        f"{addr:04X}: "
+                        f"{inst_decode[0]:<5} {operand:<5} "
+                        f"\t\tA:{regs[A]:02X} X:{regs[X]:02X} Y:{regs[Y]:02X} "
+                        f"SP:{regs[SP]:02X} PC:{regs[PC]-1:04X} P:{flags(regs[P])}\n"
+                    )
