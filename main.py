@@ -4,7 +4,6 @@ from py65.devices import mpu65c02 as core
 from py65 import monitor as Monitor
 import math
 import time
-from instructions import instructions
 import tomllib
 import argparse
 import os
