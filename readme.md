@@ -1,9 +1,14 @@
-# g6502
+# TOML-6502
 A customizable 65c02 emulator written in Python
 
-Gusza's thing, definitely not by GNU
+The core emulator is Py65,
+with configurable address space mapping via a TOML config
 
 ## Status
+
+### Config
+- [x] Customizable clock speed
+- [ ] Command-line value substitution
 
 ### Bus
 - [x] Configurable device mapping
