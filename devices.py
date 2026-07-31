@@ -128,12 +128,13 @@ class ACIA(Device):
 
     def output(self):
         mapping = self.omap
+        stdout_fd = sys.stdout.fileno()
         while self.running:
             while self.tx_buffer:
                 byte = bytes([self.tx_buffer.pop(0)])
                 if byte in mapping:
                     byte = mapping[byte]
-                print(byte.decode(), end="", flush=True)
+                os.write(stdout_fd, byte)
             sleep(0.001)
     
     def input(self):
@@ -141,7 +142,7 @@ class ACIA(Device):
         stdin = sys.stdin
         stdin_fd = sys.stdin.fileno()
         while self.running:
-            selected = select.select([stdin],[],[],0.01)[0]
+            selected = select.select([stdin_fd],[],[],0.01)[0]
             if not len(selected):continue
             char = os.read(stdin_fd, 1)
             if char in mapping:
