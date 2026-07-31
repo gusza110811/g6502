@@ -152,9 +152,9 @@ instructions = {
 
         # Low nibble 0xA
         0x0A: ("ASL", "accumulator"),
-        0x1A: ("INC", "implied"),
+        0x1A: ("INA", "implied"),
         0x2A: ("ROL", "accumulator"),
-        0x3A: ("DEC", "implied"),
+        0x3A: ("DEA", "implied"),
         0x4A: ("LSR", "accumulator"),
         0x5A: ("PHY", "implied"),
         0x6A: ("ROR", "accumulator"),

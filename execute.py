@@ -101,7 +101,7 @@ class Execute:
         def compare_and_set_flags(value1, value2):
             result = value1 - value2
             registers[P] &= 0b1111_1100  # Clear Carry and Zero flags
-            if result < 0:
+            if result >= 0:
                 registers[P] |= 0b0000_0001  # Set Carry flag
             if result == 0:
                 registers[P] |= 0b0000_0010  # Set Zero flag
@@ -116,7 +116,7 @@ class Execute:
                 registers[A] += read_value(addressing) + (registers[P]&1)
                 correct_register(A)
             case "SBC":
-                registers[A] -= read_value(addressing) + (1 - (registers[P]&1))
+                registers[A] = registers[A] + (~read_value(addressing)) + (1 - (registers[P]&1))
                 correct_register(A)
             
             case "CMP":
@@ -127,13 +127,16 @@ class Execute:
                 compare_and_set_flags(registers[Y], read_value(addressing))
             case "BIT":
                 value = read_value(addressing)
-                registers[P] &= 0b0011_0011  # Clear N and V
+                registers[P] &= 0b0011_1111  # Clear N and V
                 registers[P] |= value & 0b1100_0000  # Set N and V from value
                 if (registers[A] & value) == 0:
                     registers[P] |= 0b0000_0010  # Set Zero flag
 
             case "INC":
                 write_value(addressing,read_value(addressing)+1)
+            case "INA":
+                registers[A] += 1
+                correct_register(A)
             case "INX":
                 registers[X] += 1
                 correct_register(X)
@@ -142,6 +145,9 @@ class Execute:
                 correct_register(Y)
             case "DEC":
                 write_value(addressing,read_value(addressing)-1)
+            case "DEA":
+                registers[A] -= 1
+                correct_register(A)
             case "DEX":
                 registers[X] -= 1
                 correct_register(X)
@@ -151,17 +157,23 @@ class Execute:
 
             case "AND":
                 registers[A] &= read_value(addressing)
+                correct_register(A)
             case "ORA":
                 registers[A] |= read_value(addressing)
+                correct_register(A)
             case "EOR":
                 registers[A] ^= read_value(addressing)
+                correct_register(A)
             
             case "ASL":
                 write_value(addressing,read_value(addressing)<<1)
+                correct_register(A)
             case "LSR":
                 write_value(addressing,read_value(addressing)>>1)
+                correct_register(A)
             case "ROL":
                 original = read_value(addressing)
+                registers[PC] -= 1
                 write_value(addressing,(original<<1) | (registers[P]&1))
                 if original & 0x80:
                     registers[P] |= 0b0000_0001  # Set Carry flag
@@ -169,6 +181,7 @@ class Execute:
                     registers[P] &= 0b1111_1110  # Clear Carry flag
             case "ROR":
                 original = read_value(addressing)
+                registers[PC] -= 1
                 write_value(addressing,(original>>1) | ((registers[P]&1)<<7))
                 if original & 1:
                     registers[P] |= 0b0000_0001  # Set Carry flag
@@ -218,7 +231,7 @@ class Execute:
             case "JMP":
                 jump(addressing)
             case "JSR":
-                return_address = registers[PC] - 1
+                return_address = registers[PC]+2
                 write_value("stack", (return_address >> 8) & 0xFF)
                 write_value("stack", return_address & 0xFF)
                 jump(addressing)

@@ -1,4 +1,4 @@
-clock = "100"
+clock = "1M"
 
 [[region]]
 type = "rom"
@@ -8,20 +8,14 @@ match_mask = 0x8000
 address_mask = 0x7FFF
 
 [[region]]
-type = "demoLED"
-match = 0x6000
-match_mask = 0xE001
-address_mask = 0x0000
-
-[[region]]
-type = "demoButton"
-match = 0x6001
-match_mask = 0xE001
-address_mask = 0x0000
+type = "acia"
+match = 0x5000
+match_mask = 0xF000
+address_mask = 0x0003
 
 [[region]]
 type = "ram"
-size = 0x6000
+size = 0x4000
 match = 0x0000
-match_mask = 0x8000
-address_mask = 0x7FFF
+match_mask = 0x4000
+address_mask = 0x3FFF

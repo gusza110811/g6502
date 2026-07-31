@@ -17,14 +17,16 @@ class Emulator:
         self.memory = memory.Bus(self.interrupt, bus_definition)
         self.execute = execute.Execute(self)
         self.registers = [0] * 8  # A, X, Y, SP, PC, P, -, -
-        self.delay = 0
+        self.delay = 0.0
 
         clock = bus_definition.get("clock",None)
 
         if clock:
             if isinstance(clock,int):
                 pass
-            elif clock.endswith("k"):
+            else:
+                clock = clock.lower()
+            if clock.endswith("k"):
                 clock = int(clock[:1])*10**3
             elif clock.endswith("m"):
                 clock = int(clock[:1])*10**6
@@ -200,16 +202,16 @@ if __name__ == "__main__":
                     elif operand_type == "relative":
                         offset = emu.memory.read(regs[PC])
                         target = (regs[PC] + 1 + (offset if offset < 0x80 else offset - 0x100)) & 0xFFFF
-                        operand = f"${target:04X}"
+                        operand = f"=${target:04X}"
                     elif operand_type == "zeropage":
                         zp_addr = emu.memory.read(regs[PC])
-                        operand = f"${zp_addr:02X}"
+                        operand = f"z${zp_addr:02X}"
                     elif operand_type == "zeropage_X":
                         zp_addr = emu.memory.read(regs[PC])
-                        operand = f"${zp_addr:02X},X"
+                        operand = f"z${zp_addr:02X},X"
                     elif operand_type == "zeropage_Y":
                         zp_addr = emu.memory.read(regs[PC])
-                        operand = f"${zp_addr:02X},Y"
+                        operand = f"z${zp_addr:02X},Y"
                     elif operand_type == "absolute_X":
                         low = emu.memory.read(regs[PC])
                         high = emu.memory.read(regs[PC]+1)
@@ -228,11 +230,13 @@ if __name__ == "__main__":
                     elif operand_type == "indirect_Y":
                         zp_addr = emu.memory.read(regs[PC])
                         operand = f"(${zp_addr:02X}),Y"
+                    elif operand_type == "accumulator":
+                        operand = "A"
                     else:
                         operand = "???"
                     f.write(
                         f"{addr:04X}: "
-                        f"{inst_decode[0]:<5} {operand:<5} "
+                        f"({inst:02X}){inst_decode[0]:<5} {operand:<8} "
                         f"\t\tA:{regs[A]:02X} X:{regs[X]:02X} Y:{regs[Y]:02X} "
                         f"SP:{regs[SP]:02X} PC:{regs[PC]-1:04X} P:{flags(regs[P])}\n"
                     )
