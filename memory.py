@@ -18,6 +18,9 @@ class Bus:
     def killall(self):
         for dev in self.devices:
             dev.kill()
+    def startall(self):
+        for dev in self.devices:
+            dev.start()
     
     def gen_map(self, map_dict:str):
         regions = map_dict.get("region", [])

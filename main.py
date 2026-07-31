@@ -6,7 +6,7 @@ import math
 import time
 import tomllib
 import argparse
-import os
+import os, sys
 import termmagic
 
 A, X, Y, SP, PC, P = range(6)
@@ -51,7 +51,7 @@ class VM:
                 self.interrupt_request = False
 
             timer = time.perf_counter()
-            while timer + delay > time.perf_counter(): #wait is your sleep time
+            while timer + delay > time.perf_counter():
                 pass
 
 
@@ -89,37 +89,93 @@ class VM:
             previous = line
 
 if __name__ == "__main__":
+
+    def replace(item:dict|list|str|int|bool,options:dict[str,str]):
+
+        if isinstance(item,dict):
+            for key,value in item.items():
+                item[key] = replace(value,options)
+            return item
+        elif isinstance(item,list):
+            for idx,value in enumerate(item):
+                item[idx] = replace(value,options)
+            return item
+        elif isinstance(item, str):
+            if not item.startswith("$"):
+                result = item
+            else:
+                key = item[1:]
+                result = options.get(key)
+                if not result:
+                    raise ValueError(f"key {key} undefined or empty")
+            try:
+                return int(item,0)
+            except ValueError:
+                return result
+        else:
+            return item
+
+
     argparser = argparse.ArgumentParser()
 
     argparser.add_argument("-c","--config", default="./config.toml", help="bus definition")
     argparser.add_argument("-m","--dump",action="store_true", help="dump memory at the end of execution")
     argparser.add_argument("-M","--monitor",action="store_true", help="run monitor instead of regular execution")
+    argparser.add_argument("options",nargs="*",help="")
 
     args = argparser.parse_args()
 
     busdef = tomllib.load(open(args.config,"rb"))
+    opts:list[str] = args.options
+    options = busdef.get("options",{})
+    for field in opts:
+        sep = field.find("=")
+        options[field[:sep]] = field[sep+1:]
+
+    try:
+        replace(busdef,options)
+    except ValueError as v:
+        sys.exit(v)
 
     monitor = args.monitor
     dump = args.dump
 
-    os.chdir(os.path.dirname(args.config))
-
+    if busdef.get("static",True):
+        os.chdir(os.path.dirname(args.config))
     emu = VM(busdef)
 
-    termmagic.disable_buffering()
-    termmagic.disable_lfcrlf()
-
     if monitor:
-        Monitor.Monitor([],mpu_type=core.MPU,memory=emu.memory)
+        monitor = Monitor.Monitor([],mpu_type=core.MPU,memory=emu.memory)
+        monitor.prompt = ":"
+
+        def precmd(line):
+            termmagic.disable_buffering()
+            #termmagic.disable_lfcrlf()
+            emu.memory.startall()
+            sys.stdin.flush()
+            return line
+        monitor.precmd = precmd
+        def postcmd(stop, line):
+            termmagic.reset()
+            emu.memory.killall()
+            return stop
+        monitor.postcmd = postcmd
+
+        emu.memory.killall()
+
+        monitor.cmdloop()
 
     else:
+        termmagic.disable_lfcrlf()
         try:
+            emu.memory.startall()
             emu.main()
         except KeyboardInterrupt:
             pass
         finally:
             termmagic.reset()
             emu.memory.killall()
+    termmagic.reset()
     if dump:
         emu.dump_registers()
         emu.dump_memory(0x0000, 0xFFFF)

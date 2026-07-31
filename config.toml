@@ -1,8 +1,13 @@
-clock = "1M"
+clock = "$CLOCK"
+static = false
+
+[options]
+ROM = ""
+CLOCK = "1M"
 
 [[region]]
 type = "rom"
-source = "main.bin"
+source = "$ROM"
 match = 0x8000
 match_mask = 0x8000
 address_mask = 0x7FFF

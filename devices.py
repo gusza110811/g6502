@@ -1,6 +1,7 @@
 import threading
 from time import sleep
 import sys
+import select
 
 class Device:
 
@@ -10,6 +11,9 @@ class Device:
         self.running = True
 
         self.threads:list[threading.Thread] = []
+
+    def start(self):
+        self.running = True
         for job in self.jobs_target:
             thread = threading.Thread(target=job,daemon=True)
             self.threads.append(thread)
@@ -135,7 +139,9 @@ class ACIA(Device):
         mapping = self.imap
         stdin = sys.stdin
         while self.running:
-            char = stdin.read(1).encode()
+            selected = select.select([stdin],[],[],0.01)[0]
+            if not selected: continue
+            char = selected[0].read(1).encode()
             if char in mapping:
                 char = mapping[char]
             for c in char:
