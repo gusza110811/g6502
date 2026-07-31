@@ -8,7 +8,7 @@ with configurable address space mapping via a TOML config
 
 ### Config
 - [x] Customizable clock speed
-- [ ] Command-line value substitution
+- [x] Command-line value substitution
 
 ### Bus
 - [x] Configurable device mapping
@@ -16,8 +16,7 @@ with configurable address space mapping via a TOML config
 - [ ] LCD text display device
 
 ### Compatibility
-- [x] Ben Eater's minimal 6502 breadboard computer
-- [ ] Ben Eater's complete 6502 breadboard computer
+- [x] Ben Eater's 6502 breadboard computer
 - [ ] Klaus Doormann Functionality Test
-- [ ] Apple II
+- [x] Apple II (optimistically)
 - [ ] Commodore 64
