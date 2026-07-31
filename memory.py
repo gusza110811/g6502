@@ -11,8 +11,13 @@ class Bus:
     def __init__(self, irq_callback=None, map_dict:dict=None):
         self.map = []
         self.irq_callback = irq_callback
+        self.devices = []
         if map_dict:
             self.gen_map(map_dict)
+    
+    def killall(self):
+        for dev in self.devices:
+            dev.kill()
     
     def gen_map(self, map_dict:str):
         regions = map_dict.get("region", [])
@@ -26,8 +31,9 @@ class Bus:
             if handler is None:
                 print(f"Unknown device: {type}")
                 continue
-
-            self.map.append(map_entry(match, match_mask, address_mask, handler(region, self.irq_callback)))
+            entry = map_entry(match, match_mask, address_mask, handler(region, self.irq_callback))
+            self.devices.append(entry.handler)
+            self.map.append(entry)
     
     def read(self, address):
         for item in self.map:
@@ -40,3 +46,9 @@ class Bus:
             if (address & item.match_mask) == item.match:
                 return item.handler.write(address & item.address_mask, value & 0xFF)
         return 0
+    
+    def __getitem__(self, address):
+        return self.read(address)
+    
+    def __setitem__(self, address, value):
+        return self.write(address, value)

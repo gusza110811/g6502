@@ -9,13 +9,16 @@ class Device:
 
         self.running = True
 
-        self.threads = []
+        self.threads:list[threading.Thread] = []
         for job in self.jobs_target:
             thread = threading.Thread(target=job,daemon=True)
             self.threads.append(thread)
             thread.start()
 
     jobs_target = []
+
+    def kill(self):
+        self.running = False
 
     def read(self, addr):
         return 0
