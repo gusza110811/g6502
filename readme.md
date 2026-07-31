@@ -5,15 +5,10 @@ Gusza's thing, definitely not by GNU
 
 ## Status
 
-### ISA
-- [x] Core 6502 instructions
-- [x] wdc65c02 extension
-- [ ] Cycle accuracy
-
 ### Bus
 - [x] Configurable device mapping
+- [x] ACIA device
 - [ ] LCD text display device
-- [ ] ACIA device
 
 ### Compatibility
 - [x] Ben Eater's minimal 6502 breadboard computer
