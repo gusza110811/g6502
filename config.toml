@@ -12,6 +12,7 @@ type = "acia"
 match = 0x5000
 match_mask = 0xF000
 address_mask = 0x0003
+ocrcrlf = true
 
 [[region]]
 type = "ram"

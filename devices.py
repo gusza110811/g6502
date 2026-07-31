@@ -97,13 +97,33 @@ class ACIA(Device):
         self.tx_buffer = []
         self.rx_buffer = []
         self.jobs_target = [self.input, self.output]
+
+        omap_opt = [
+            ("odelbksp",b"\x7f",b"\b",True),
+            ("ocrcrlf",b"\r",b"\r\n",False),
+            ("olfcrlf",b"\n",b"\r\n",False),
+        ]
+        imap_opt = [
+            ("idelbksp",b"\x7f",b"\b",True),
+            ("ilfcr",b"\n",b"\r",True),
+        ]
+
+        self.omap = {}
+
+        for opt in omap_opt:
+            if parameters.get(opt[0],opt[3]):
+                self.omap[opt[1]] = opt[2]
+
+        self.imap = {}
+        
+        for opt in imap_opt:
+            if parameters.get(opt[0],opt[3]):
+                self.imap[opt[1]] = opt[2]
+
         super().__init__(parameters, irq_callback)
 
     def output(self):
-        mapping = {
-            b"\x7F": b"\b",
-            b"\r": b"\r\n",
-        }
+        mapping = self.omap
         while self.running:
             if self.tx_buffer:
                 byte = bytes([self.tx_buffer.pop(0)])
@@ -112,10 +132,7 @@ class ACIA(Device):
                 print(byte.decode(), end="", flush=True)
     
     def input(self):
-        mapping = {
-            b"\x7F": b"\b",
-            b"\n": b"\r",
-        }
+        mapping = self.imap
         stdin = sys.stdin
         while self.running:
             char = stdin.read(1).encode()
