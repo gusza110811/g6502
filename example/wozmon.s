@@ -12,10 +12,10 @@ MODE  = $2B                            ; $00=XAM, $7F=STOR, $AE=BLOCK XAM
 
 IN    = $0200                          ; Input buffer
 
-ACIA_DATA   = $5000
-ACIA_STATUS = $5001
-ACIA_CMD    = $5002
-ACIA_CTRL   = $5003
+ACIA_DATA   = $FE00
+ACIA_STATUS = $FE01
+ACIA_CMD    = $FE02
+ACIA_CTRL   = $FE03
 
 RESET:
     LDA     #$1F           ; 8-N-1, 19200 baud.

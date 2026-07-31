@@ -1,5 +1,20 @@
 #!/usr/bin/env python3
-import memory
+
+# COPYING – Summary of Licensing Terms
+
+# Copyright (c) 2026 Slava "Gusza" Nikolsky
+
+# You are permitted to use this software for free, forever, for any lawful purpose.
+
+# However, you are NOT permitted to:
+# 1. Redistribute this software (or any modified versions) under a different name.
+# 2. Redistribute this software (or any modified versions) for commercial purposes or for profit.
+
+# The software is provided "AS IS", without any warranties or guarantees of any kind.
+
+# For full legal terms, please refer to the LICENSE file.
+
+import memory as memory
 from py65.devices import mpu65c02 as core
 from py65 import monitor as Monitor
 import math
@@ -7,7 +22,7 @@ import time
 import tomllib
 import argparse
 import os, sys
-import termmagic
+import termmagic as termmagic
 
 A, X, Y, SP, PC, P = range(6)
 
@@ -88,8 +103,7 @@ class VM:
             print(get_string(line))
             previous = line
 
-if __name__ == "__main__":
-
+def main():
     def replace(item:dict|list|str|int|bool,options:dict[str,str]):
 
         if isinstance(item,dict):
@@ -118,14 +132,17 @@ if __name__ == "__main__":
 
     argparser = argparse.ArgumentParser()
 
-    argparser.add_argument("-c","--config", default="./config.toml", help="bus definition")
+    argparser.add_argument("config", default="./config.toml", help="bus definition", nargs="?")
     argparser.add_argument("-m","--dump",action="store_true", help="dump memory at the end of execution")
     argparser.add_argument("-M","--monitor",action="store_true", help="run monitor instead of regular execution")
     argparser.add_argument("options",nargs="*",help="")
 
     args = argparser.parse_args()
 
-    busdef = tomllib.load(open(args.config,"rb"))
+    try:
+        busdef = tomllib.load(open(args.config,"rb"))
+    except FileNotFoundError:
+        sys.exit(f"{args.config} doesnt exist")
     opts:list[str] = args.options
     options = busdef.get("options",{})
     for field in opts:
@@ -180,3 +197,6 @@ if __name__ == "__main__":
     if dump:
         emu.dump_registers()
         emu.dump_memory(0x0000, 0xFFFF)
+
+if __name__ == "__main__":
+    main()

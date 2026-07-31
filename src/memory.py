@@ -1,4 +1,4 @@
-import devices
+import devices as devices
 
 class map_entry:
     def __init__(self, match:int, match_mask:int, address_mask:int, handler:devices.Device):

@@ -1,27 +1,27 @@
 clock = "$CLOCK"
-static = false
+static = true
 
 [options]
-ROM = ""
+ROM = "wozmon.bin"
 CLOCK = "1M"
 
 [[region]]
 type = "rom"
 source = "$ROM"
-match = 0x8000
-match_mask = 0x8000
+match = 0xFF00
+match_mask = 0xFF00
 address_mask = 0x7FFF
 
 [[region]]
 type = "acia"
-match = 0x5000
-match_mask = 0xF000
+match = 0xFE00
+match_mask = 0xFF00
 address_mask = 0x0003
 ocrcrlf = true
 
 [[region]]
 type = "ram"
-size = 0x4000
+size = 0xFE00
 match = 0x0000
-match_mask = 0x4000
-address_mask = 0x3FFF
+match_mask = 0x0000
+address_mask = 0xFFFF
