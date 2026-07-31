@@ -166,6 +166,7 @@ if __name__ == "__main__":
         monitor.cmdloop()
 
     else:
+        termmagic.disable_buffering()
         termmagic.disable_lfcrlf()
         try:
             emu.memory.startall()

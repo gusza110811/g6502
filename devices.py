@@ -1,6 +1,6 @@
 import threading
 from time import sleep
-import sys
+import sys, os
 import select
 
 class Device:
@@ -129,19 +129,21 @@ class ACIA(Device):
     def output(self):
         mapping = self.omap
         while self.running:
-            if self.tx_buffer:
+            while self.tx_buffer:
                 byte = bytes([self.tx_buffer.pop(0)])
                 if byte in mapping:
                     byte = mapping[byte]
                 print(byte.decode(), end="", flush=True)
+            sleep(0.001)
     
     def input(self):
         mapping = self.imap
         stdin = sys.stdin
+        stdin_fd = sys.stdin.fileno()
         while self.running:
             selected = select.select([stdin],[],[],0.01)[0]
-            if not selected: continue
-            char = selected[0].read(1).encode()
+            if not len(selected):continue
+            char = os.read(stdin_fd, 1)
             if char in mapping:
                 char = mapping[char]
             for c in char:
