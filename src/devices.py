@@ -177,8 +177,8 @@ class ACIA(Device):
 
     def menu(self):
         stdin = sys.stdin
-        prompt = "[N]MI [I]RQ [R]eset e[X]it [S]end []continue:"
-        print(prompt, end="", flush=True)
+        prompt = "[N]MI [I]RQ [R]eset e[X]it [S]end []continue"
+        print("\033[?1049h\r"+prompt, end="", flush=True)
 
         command = stdin.read(1).lower()
         if command == "i":
@@ -190,7 +190,7 @@ class ACIA(Device):
         elif command == "x":
             self.irq_callback(-1)
 
-        print(len(prompt)*"\b"+len(prompt)*" "+len(prompt)*"\b", end="\r", flush=True)
+        print("\b"*len(prompt)+" "*(len(prompt))+"\b"*len(prompt), end="", flush=True)
 
         if command == "s":
             print(": ", end="", flush=True)
@@ -203,6 +203,8 @@ class ACIA(Device):
                 self.rx_buffer.extend(bytes_list)
             except ValueError:
                 print("Invalid")
+
+        print("\033[?1049l", end="", flush=True)
     
     def input(self):
         mapping = self.imap

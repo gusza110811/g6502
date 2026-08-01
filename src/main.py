@@ -37,6 +37,14 @@ class VM:
     def __init__(self, bus_definition:dict):
         self.running = True
         self.memory = memory.Bus(self.interrupt, bus_definition)
+        acia_exists = False
+        for device in self.memory.devices:
+            if device.__class__.__name__ == "ACIA":
+                acia_exists = True
+                break
+        if not acia_exists:
+            raise ValueError("ACIA device must be defined for normal emulation")
+
         self.cpu = core.MPU(self.memory, pc=None)
         self.delay = 0.0
 
