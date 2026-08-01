@@ -119,7 +119,7 @@ class ACIA(Device):
             "pass"
         ]
 
-        ctrlc = parameters.get("ctrl-c","reset").lower()
+        ctrlc = parameters.get("ctrl-c","pass").lower()
 
         if ctrlc not in ctrlc_type:
             raise ValueError(f"Invalid CTRL-C bahavior: {ctrlc}")
