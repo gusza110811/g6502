@@ -48,6 +48,30 @@ class Ram(Device):
         if addr < len(self.memory):
             self.memory[addr] = value
 
+class Nvram(Device):
+    def __init__(self, parameters, irq_callback=None):
+        super().__init__(parameters, irq_callback)
+        savefilename = parameters.get("file","nvram.img")
+        size = parameters.get("size",None)
+        if size is None:
+            raise ValueError("NVRam size not defined")
+        if os.path.exists(savefilename):
+            self.savefile = open(savefilename,"rb+")
+        else:
+            self.savefile = open(savefilename,"wb+")
+        sizef = self.savefile.seek(0,2)
+        if sizef < size:
+            self.savefile.write(bytes(size-sizef))
+
+    def read(self, addr):
+        self.savefile.seek(addr)
+        return self.savefile.read(1)[0]
+
+    def write(self, addr, value):
+        self.savefile.seek(addr)
+        self.savefile.write(bytes([value]))
+        self.savefile.flush()
+
 class Rom(Device):
     def __init__(self, parameters:dict, irq_callback=None):
         source = parameters.get("source","main.bin")
@@ -226,6 +250,7 @@ class ACIA(Device):
 
 mapping = {
     "ram":Ram,
+    "nvram":Nvram,
     "rom":Rom,
     "demoled":DemoLED,
     "demobutton":DemoButton,

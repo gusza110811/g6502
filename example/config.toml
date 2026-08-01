@@ -21,8 +21,15 @@ ocrcrlf = true
 ctrl-c = "reset"
 
 [[region]]
+type = "nvram"
+size = 0x4000
+match = 0x4000
+match_mask = 0xC000
+address_mask = 0x3FFF
+
+[[region]]
 type = "ram"
-size = 0xFE00
+size = 0x4000
 match = 0x0000
-match_mask = 0x0000
-address_mask = 0xFFFF
+match_mask = 0xC000
+address_mask = 0x3FFF
