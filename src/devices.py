@@ -2,6 +2,7 @@ import threading
 from time import sleep
 import sys, os
 import select
+import termmagic as termmagic
 
 class Device:
 
@@ -112,6 +113,19 @@ class ACIA(Device):
             ("ilfcr",b"\n",b"\r",True),
         ]
 
+        ctrlc_type = [
+            "reset",
+            "halt",
+            "pass"
+        ]
+
+        ctrlc = parameters.get("ctrl-c","reset").lower()
+
+        if ctrlc not in ctrlc_type:
+            raise ValueError(f"Invalid CTRL-C bahavior: {ctrlc}")
+
+        self.ctrlc = ctrlc_type.index(ctrlc)
+
         self.omap = {}
 
         for opt in omap_opt:
@@ -136,15 +150,57 @@ class ACIA(Device):
                     byte = mapping[byte]
                 os.write(stdout_fd, byte)
             sleep(0.001)
+
+    def menu(self):
+        stdin = sys.stdin
+        prompt = "[N]MI [I]RQ [R]eset e[X]it [S]end []continue:"
+        print(prompt, end="", flush=True)
+
+        command = stdin.read(1).lower()
+        if command == "i":
+            self.irq_callback(0)
+        elif command == "n":
+            self.irq_callback(1)
+        elif command == "r":
+            self.irq_callback(2)
+        elif command == "x":
+            self.irq_callback(-1)
+
+        print(len(prompt)*"\b"+len(prompt)*" "+len(prompt)*"\b", end="\r", flush=True)
+
+        if command == "s":
+            print(": ", end="", flush=True)
+            termmagic.reset()
+            bytes_str = stdin.readline().strip()
+            termmagic.disable_buffering()
+            termmagic.disable_lfcrlf()
+            try:
+                bytes_list = bytes.fromhex(bytes_str)
+                self.rx_buffer.extend(bytes_list)
+            except ValueError:
+                print("Invalid")
     
     def input(self):
         mapping = self.imap
         stdin = sys.stdin
         stdin_fd = sys.stdin.fileno()
+        ctrlc = self.ctrlc
         while self.running:
             selected = select.select([stdin_fd],[],[],0.01)[0]
             if not len(selected):continue
             char = os.read(stdin_fd, 1)
+            if char == b"\x03":
+                if ctrlc == 0:
+                    self.irq_callback(2)
+                    continue
+                elif ctrlc == 1:
+                    self.irq_callback(-1)
+                    continue
+            if char == b"\x01":
+                self.irq_callback(-2)
+                self.menu()
+                self.irq_callback(-3)
+                continue
             if char in mapping:
                 char = mapping[char]
             for c in char:

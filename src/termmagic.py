@@ -13,7 +13,7 @@ def disable_buffering():
         return
     stdinfd = sys.stdin.fileno()
 
-    tty.setcbreak(stdinfd, termios.TCSANOW)
+    tty.setraw(stdinfd, termios.TCSANOW)
 
 def disable_lfcrlf():
     if not sys.stdout.isatty():

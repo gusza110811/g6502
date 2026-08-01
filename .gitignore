@@ -1,9 +1,9 @@
 .*
+!/.gitignore
 *.log
 __pycache__
 dist
 
-!/.gitignore
 
 *.out
 *.bin

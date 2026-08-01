@@ -18,6 +18,7 @@ match = 0xFE00
 match_mask = 0xFF00
 address_mask = 0x0003
 ocrcrlf = true
+ctrl-c = "reset"
 
 [[region]]
 type = "ram"
