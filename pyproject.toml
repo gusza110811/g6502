@@ -3,7 +3,7 @@ requires = ["hatchling >= 1.26"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/main.py"]
+packages = ["src/toml65"]
 
 [project]
 #dynamic = ["version"]
@@ -51,7 +51,7 @@ dependencies = [
 requires-python = ">= 3.8"
 
 [project.scripts]
-toml-6502 = "main:main"
+toml-6502 = "toml65.main:main"
 
 [project.urls]
 Repository = "https://github.com/gusza110811/toml-6502"

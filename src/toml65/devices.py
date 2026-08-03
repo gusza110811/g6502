@@ -2,7 +2,7 @@ import threading
 from time import sleep
 import sys, os
 import select
-import termmagic as termmagic
+import toml65.termmagic as termmagic
 
 class Device:
 

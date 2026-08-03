@@ -14,7 +14,7 @@
 
 # For full legal terms, please refer to the LICENSE file.
 
-import memory as memory
+import toml65.memory as memory
 from py65.devices import mpu65c02 as core
 from py65 import monitor as Monitor
 import math
@@ -22,7 +22,7 @@ import time
 import tomllib
 import argparse
 import os, sys
-import termmagic as termmagic
+import toml65.termmagic as termmagic
 
 A, X, Y, SP, PC, P = range(6)
 
