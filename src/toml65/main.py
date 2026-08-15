@@ -197,7 +197,7 @@ def main():
     dump = args.dump
 
     if busdef.get("static",True):
-        os.chdir(os.path.dirname(args.config))
+        os.chdir(os.path.dirname(os.path.abspath(args.config)))
     emu = VM(busdef)
 
     if monitor:
