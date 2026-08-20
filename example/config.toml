@@ -21,7 +21,9 @@ ocrcrlf = true
 ctrl-c = "reset"
 
 [[region]]
-type = "nvram"
+type = "ram"
+nv = true
+file = "nvram0.img"
 size = 0x4000
 match = 0x4000
 match_mask = 0xC000

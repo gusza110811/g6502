@@ -4,10 +4,13 @@ import sys, os
 import select
 import toml65.termmagic as termmagic
 
+class DeviceError(Exception): pass
+
 class Device:
 
-    def __init__(self, parameters:dict, irq_callback=None):
+    def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         self.irq_callback = irq_callback
+        self.get_device = get_device
 
         self.running = True
 
@@ -32,48 +35,87 @@ class Device:
         pass
 
 class Ram(Device):
-    def __init__(self, parameters:dict, irq_callback=None):
+    def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         size = parameters.get("size",None)
         if size is None:
             raise ValueError("Ram size not defined")
-        self.memory = [0] * size
+
+        self.nonvolatile = parameters.get("nv",False)
+        if self.nonvolatile:
+            savefilename = parameters.get("file","nvram.img")
+            if os.path.exists(savefilename):
+                self.savefile = open(savefilename,"rb+")
+            else:
+                self.savefile = open(savefilename,"wb+")
+            sizef = self.savefile.seek(0,2)
+            if sizef < size:
+                self.savefile.write(bytes(size-sizef))
+
+            self.get_size = self.nvget_size
+        else:
+            self.memory = [0] * size
+
+        self.banked = parameters.get("banked",False)
+        if self.banked:
+            self.window_id_length = parameters.get("window_id_length",None) # number of bits from MSB to use for window ID
+            if self.window_id_length is None:
+                raise ValueError("Banked RAM window_id_length not defined")
+            self.bank_id_length = parameters.get("bank_id_length",None) # number of bytes for bank ID of each window in control area
+            if self.bank_id_length is None:
+                raise ValueError("Banked RAM bank_id_length not defined")
+            control_area_name = parameters.get("control_area",None)
+            if control_area_name is None:
+                raise ValueError("Banked RAM control_area not defined")
+            self.control_area:Ram = get_device(control_area_name)
+            self.control_area_offset = parameters.get("control_area_offset",0)
+
+            window_count = 2**self.window_id_length
+
+            if not isinstance(self.control_area, Ram):
+                raise ValueError("Banked RAM control area must be a RAM device")
+            if window_count * self.bank_id_length > self.control_area.get_size() - self.control_area_offset:
+                raise ValueError("Banked RAM control area too small for defined window and bank sizes")
+
+    def banked_getrealaddr(self, addr):
+        window_id = (addr >> (16-self.window_id_length)) & ((1 << self.window_id_length)-1)
+        bank_id = self.control_area.read(self.control_area_offset + window_id)
+        realaddr = (bank_id << (16-self.window_id_length)) | (addr & ((1 << (16-self.window_id_length))-1))
+        return realaddr
 
     def read(self, addr):
-        if addr < len(self.memory):
-            return self.memory[addr]
+        if self.banked:
+            addr = self.banked_getrealaddr(addr)
+
+        if self.nonvolatile:
+            self.savefile.seek(addr)
+            return self.savefile.read(1)[0]
         else:
-            return 0x00
+            if addr < self.get_size():
+                return self.memory[addr]
+            else:
+                return 0x00
 
     def write(self, addr, value):
-        if addr < len(self.memory):
-            self.memory[addr] = value
+        if self.banked:
+            addr = self.banked_getrealaddr(addr)
 
-class Nvram(Device):
-    def __init__(self, parameters, irq_callback=None):
-        super().__init__(parameters, irq_callback)
-        savefilename = parameters.get("file","nvram.img")
-        size = parameters.get("size",None)
-        if size is None:
-            raise ValueError("NVRam size not defined")
-        if os.path.exists(savefilename):
-            self.savefile = open(savefilename,"rb+")
+        if self.nonvolatile:
+            self.savefile.seek(addr)
+            self.savefile.write(bytes([value]))
+            self.savefile.flush()
         else:
-            self.savefile = open(savefilename,"wb+")
-        sizef = self.savefile.seek(0,2)
-        if sizef < size:
-            self.savefile.write(bytes(size-sizef))
+            if addr < self.get_size():
+                self.memory[addr] = value
 
-    def read(self, addr):
-        self.savefile.seek(addr)
-        return self.savefile.read(1)[0]
+    def get_size(self):
+        return len(self.memory)
 
-    def write(self, addr, value):
-        self.savefile.seek(addr)
-        self.savefile.write(bytes([value]))
-        self.savefile.flush()
+    def nvget_size(self):
+        self.savefile.seek(0,2)
+        return self.savefile.tell()
 
 class Rom(Device):
-    def __init__(self, parameters:dict, irq_callback=None):
+    def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         source = parameters.get("source","main.bin")
         if source is None:
             raise ValueError("Rom image source not defined")
@@ -86,7 +128,7 @@ class Rom(Device):
         pass
 
 class DemoLED(Device):
-    def __init__(self, parameters:dict, irq_callback=None):
+    def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         self.state = 0
         self.jobs_target = [self.run]
         super().__init__(parameters, irq_callback)
@@ -122,7 +164,7 @@ class DemoButton(Device):
         pass
 
 class ACIA(Device):
-    def __init__(self, parameters:dict, irq_callback=None):
+    def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         self.tx_buffer = []
         self.rx_buffer = []
         self.jobs_target = [self.input, self.output]
@@ -252,7 +294,6 @@ class ACIA(Device):
 
 mapping = {
     "ram":Ram,
-    "nvram":Nvram,
     "rom":Rom,
     "demoled":DemoLED,
     "demobutton":DemoButton,

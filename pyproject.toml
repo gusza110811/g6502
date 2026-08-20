@@ -17,7 +17,7 @@ maintainers = [
 ]
 
 name = "toml-6502"
-version = "0.2.0"
+version = "0.3.0"
 description = "Emulate 65c02 with TOML memory mapping"
 keywords = ["6502", "65c02", "wdc65c02", "emulator", "toml", "virtual machine"]
 classifiers = [
