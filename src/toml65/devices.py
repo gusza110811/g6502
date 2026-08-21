@@ -14,6 +14,8 @@ class Device:
 
         self.running = True
 
+        self.name = parameters.get("name",None)
+
         self.threads:list[threading.Thread] = []
 
     def start(self):
@@ -36,6 +38,7 @@ class Device:
 
 class Ram(Device):
     def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
+        super().__init__(parameters, irq_callback, get_device)
         size = parameters.get("size",None)
         if size is None:
             raise ValueError("Ram size not defined")
@@ -60,6 +63,7 @@ class Ram(Device):
             self.window_id_length = parameters.get("window_id_length",None) # number of bits from MSB to use for window ID
             if self.window_id_length is None:
                 raise ValueError("Banked RAM window_id_length not defined")
+            self.window_id_unused = parameters.get("window_id_unused",0) # number of bits from MSB to skip before window ID
             self.bank_id_length = parameters.get("bank_id_length",None) # number of bytes for bank ID of each window in control area
             if self.bank_id_length is None:
                 raise ValueError("Banked RAM bank_id_length not defined")
@@ -69,7 +73,9 @@ class Ram(Device):
             self.control_area:Ram = get_device(control_area_name)
             self.control_area_offset = parameters.get("control_area_offset",0)
 
-            window_count = 2**self.window_id_length
+            window_count = 2**(self.window_id_length-self.window_id_unused)
+
+            #print(f"Banked RAM: {window_count} windows, {self.bank_id_length} bytes per bank. page table: {self.control_area.name}", file=sys.stderr, flush=True)
 
             if not isinstance(self.control_area, Ram):
                 raise ValueError("Banked RAM control area must be a RAM device")
@@ -77,23 +83,26 @@ class Ram(Device):
                 raise ValueError("Banked RAM control area too small for defined window and bank sizes")
 
     def banked_getrealaddr(self, addr):
-        window_id = (addr >> (16-self.window_id_length)) & ((1 << self.window_id_length)-1)
-        bank_id = self.control_area.read(self.control_area_offset + window_id)
-        realaddr = (bank_id << (16-self.window_id_length)) | (addr & ((1 << (16-self.window_id_length))-1))
+        window_id = addr >> (16-self.window_id_length+self.window_id_unused)
+        window_offset = addr & ((1 << (16-self.window_id_length+self.window_id_unused))-1)
+        page = self.control_area.read(self.control_area_offset + window_id * self.bank_id_length, self.bank_id_length)
+        realaddr = (page << (16-self.window_id_length+self.window_id_unused)) | window_offset
+        #print(f"Banked RAM: {addr:04X} -> {realaddr:04X}. id: {window_id}, page: {page} [({self.control_area_offset + window_id * self.bank_id_length:04X})]", file=sys.stderr, flush=True)
         return realaddr
 
-    def read(self, addr):
+    def read(self, addr, count=1):
         if self.banked:
             addr = self.banked_getrealaddr(addr)
+        #print(f"RAM read: {addr:04X} (size={self.get_size():X}) from {self.name}", file=sys.stderr, flush=True)
+
+        if addr >= self.get_size():
+            return 0x00
 
         if self.nonvolatile:
             self.savefile.seek(addr)
-            return self.savefile.read(1)[0]
+            return int.from_bytes(self.savefile.read(count), byteorder='little')
         else:
-            if addr < self.get_size():
-                return self.memory[addr]
-            else:
-                return 0x00
+            return int.from_bytes(self.memory[addr:addr+count], byteorder='little')
 
     def write(self, addr, value):
         if self.banked:
@@ -116,6 +125,7 @@ class Ram(Device):
 
 class Rom(Device):
     def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
+        super().__init__(parameters, irq_callback, get_device)
         source = parameters.get("source","main.bin")
         if source is None:
             raise ValueError("Rom image source not defined")
@@ -131,7 +141,7 @@ class DemoLED(Device):
     def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         self.state = 0
         self.jobs_target = [self.run]
-        super().__init__(parameters, irq_callback)
+        super().__init__(parameters, irq_callback, get_device)
 
     def run(self):
         prev = 0
@@ -292,7 +302,7 @@ class ACIA(Device):
         elif addr == 2:
             pass
 
-mapping = {
+mapping:dict[str, type] = {
     "ram":Ram,
     "rom":Rom,
     "demoled":DemoLED,

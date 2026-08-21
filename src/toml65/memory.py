@@ -12,16 +12,15 @@ class Bus:
     def __init__(self, irq_callback=None, map_dict:dict=None):
         self.map = []
         self.irq_callback = irq_callback
-        self.devices = []
-        self.names = {}
+        self.devices = {}
         if map_dict:
             self.gen_map(map_dict)
     
     def killall(self):
-        for dev in self.devices:
+        for dev in self.devices.values():
             dev.kill()
     def startall(self):
-        for dev in self.devices:
+        for dev in self.devices.values():
             dev.start()
     
     def gen_map(self, map_dict:str):
@@ -41,11 +40,22 @@ class Bus:
             if handler is None:
                 print(f"Unknown device: {type}")
                 continue
-            handler = handler(region, self.irq_callback, self.get_device)
+            handler:devices.Device = handler(region, self.irq_callback, self.get_device)
+
+            if name is None:
+                name = self.get_valid_name(handler.name)
+
             entry = map_entry(match, match_mask, address_mask, offset, handler)
-            self.devices.append(handler)
-            self.names[name] = handler
+            self.devices[name] = handler
             self.map.append(entry)
+
+    def get_valid_name(self, prefix:str):
+        i = 0
+        while True:
+            name = f"{prefix}{i}"
+            if name not in self.devices:
+                return name
+            i += 1
     
     def read(self, address):
         for item in self.map:
@@ -60,7 +70,7 @@ class Bus:
         return 0
 
     def get_device(self, name):
-        return self.names.get(None)
+        return self.devices.get(name, None)
     
     def __getitem__(self, address):
         return self.read(address)

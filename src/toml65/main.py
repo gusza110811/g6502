@@ -36,12 +36,14 @@ class VM:
     
     def __init__(self, bus_definition:dict):
         self.running = True
+        #print(bus_definition,file=sys.stderr)
         self.memory = memory.Bus(self.interrupt, bus_definition)
         acia_exists = False
-        for device in self.memory.devices:
-            if device.__class__.__name__ == "ACIA":
+        for device in self.memory.devices.values():
+            if isinstance(device, memory.devices.ACIA):
                 acia_exists = True
                 break
+        #print(f"Devices: {', '.join([f'{name}: {device.__class__.__name__}' for name, device in self.memory.devices.items()])}", file=sys.stderr, flush=True)
         if not acia_exists:
             raise ValueError("ACIA device must be defined for normal emulation")
 
