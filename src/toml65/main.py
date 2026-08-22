@@ -30,9 +30,10 @@ class VM:
     UNPAUSE=-3
     PAUSE=-2
     HALT=-1
-    IRQ=0
-    NMI=1
-    RESET=2
+    IRQ_START=0
+    IRQ_END=1
+    NMI=2
+    RESET=3
     
     def __init__(self, bus_definition:dict):
         self.running = True
@@ -68,15 +69,20 @@ class VM:
 
             self.delay = 1/clock
 
-        self.interrupt_request = False
+        self.interrupt_request = 0
+        self.non_maskable_interrupt = False
         self.reset_request = False
         self.pause_request = False
         self.paused = False
 
     def interrupt(self, type:int=0):
         match type:
-            case self.IRQ:
-                self.interrupt_request = True
+            case self.IRQ_START:
+                self.interrupt_request += 1
+            case self.IRQ_END:
+                self.interrupt_request = max(0, self.interrupt_request-1)
+            case self.NMI:
+                self.non_maskable_interrupt = True
             case self.RESET:
                 self.reset_request = True
             case self.PAUSE:
@@ -93,9 +99,11 @@ class VM:
         cpu = self.cpu
         while self.running:
             cpu.step()
-            if self.interrupt_request:
+            if self.interrupt_request > 0:
                 cpu.irq()
-                self.interrupt_request = False
+            if self.non_maskable_interrupt:
+                self.non_maskable_interrupt = False
+                cpu.nmi()
             if self.reset_request:
                 cpu.reset()
                 self.reset_request = False
@@ -103,7 +111,7 @@ class VM:
             if self.pause_request:
                 self.paused = True
                 while self.pause_request:
-                    pass
+                    time.sleep(0)
                 self.paused = False
 
             timer = time.perf_counter()

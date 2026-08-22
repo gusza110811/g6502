@@ -177,6 +177,8 @@ class ACIA(Device):
     def __init__(self, parameters:dict, irq_callback=None, get_device:callable=None):
         self.tx_buffer = []
         self.rx_buffer = []
+        self.command = 0
+        self.control = 0
         self.jobs_target = [self.input, self.output]
 
         omap_opt = [
@@ -229,16 +231,14 @@ class ACIA(Device):
 
     def menu(self):
         stdin = sys.stdin
-        prompt = "[N]MI [I]RQ [R]eset e[X]it [S]end []continue"
+        prompt = "[N]MI [R]eset e[X]it [S]end []continue"
         print("\033[?1049h\r"+prompt, end="", flush=True)
 
         command = stdin.read(1).lower()
-        if command == "i":
-            self.irq_callback(0)
-        elif command == "n":
-            self.irq_callback(1)
-        elif command == "r":
+        if command == "n":
             self.irq_callback(2)
+        elif command == "r":
+            self.irq_callback(3)
         elif command == "x":
             self.irq_callback(-1)
 
@@ -260,7 +260,7 @@ class ACIA(Device):
     
     def input(self):
         mapping = self.imap
-        stdin = sys.stdin
+        stdout_fd = sys.stdout.fileno()
         stdin_fd = sys.stdin.fileno()
         ctrlc = self.ctrlc
         while self.running:
@@ -281,12 +281,18 @@ class ACIA(Device):
                 continue
             if char in mapping:
                 char = mapping[char]
+            if self.command & 0b00010000:
+                os.write(stdout_fd, char)
+            if not (self.command & 0b00000010):
+                self.irq_callback(0) # begin irq signal
             for c in char:
                 self.rx_buffer.append(c)
 
     def read(self, addr):
         if addr == 0:
             if self.rx_buffer:
+                if len(self.rx_buffer) == 1 and not (self.command & 0b0000001):
+                    self.irq_callback(1) # end irq signal
                 return self.rx_buffer.pop(0)
             else:
                 return 0
@@ -300,7 +306,9 @@ class ACIA(Device):
         elif addr == 1:
             pass
         elif addr == 2:
-            pass
+            self.command = value
+        elif addr == 2:
+            self.control = value
 
 mapping:dict[str, type] = {
     "ram":Ram,
