@@ -223,10 +223,15 @@ class ACIA(Device):
         stdout_fd = sys.stdout.fileno()
         while self.running:
             while self.tx_buffer:
-                byte = bytes([self.tx_buffer.pop(0)])
-                if byte in mapping:
-                    byte = mapping[byte]
-                os.write(stdout_fd, byte)
+                rawbytes = self.tx_buffer
+                bufferout = bytearray()
+                for byte in rawbytes:
+                    if byte in mapping:
+                        bufferout.append(mapping[byte])
+                    else:
+                        bufferout.append(byte)
+                self.tx_buffer.clear()
+                os.write(stdout_fd, bufferout)
             sleep(0.001)
 
     def menu(self):
