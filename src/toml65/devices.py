@@ -83,11 +83,11 @@ class Ram(Device):
                 raise ValueError("Banked RAM control area too small for defined window and bank sizes")
 
     def banked_getrealaddr(self, addr):
-        window_id = addr >> (16-self.window_id_length+self.window_id_unused)
-        window_offset = addr & ((1 << (16-self.window_id_length+self.window_id_unused))-1)
+        window_id = addr >> (16-self.window_id_length)
+        window_offset = addr & ((1 << (16-self.window_id_length))-1)
         page = self.control_area.read(self.control_area_offset + window_id * self.bank_id_length, self.bank_id_length)
-        realaddr = (page << (16-self.window_id_length+self.window_id_unused)) | window_offset
-        #print(f"Banked RAM: {addr:04X} -> {realaddr:04X}. id: {window_id}, page: {page} [({self.control_area_offset + window_id * self.bank_id_length:04X})]", file=sys.stderr, flush=True)
+        realaddr = (page << (16-self.window_id_length)) | window_offset
+        #print(("NV" if self.nonvolatile else "  ") + f"Banked RAM: {addr:04X} -> {realaddr:04X}. id: {window_id:2X}, page: {page:2X} [({self.control_area_offset + window_id * self.bank_id_length:04X})]", file=sys.stderr, flush=True)
         return realaddr
 
     def read(self, addr, count=1):
